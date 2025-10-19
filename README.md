@@ -342,7 +342,7 @@ function CommentForm() {
 ## Dependencies
 
 -   React 16.8+ (hooks required)
--   react-textarea-autosize
+-   react-textarea-autosize (for the demo only)
 
 ## License
 
