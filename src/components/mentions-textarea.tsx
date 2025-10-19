@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import TextareaAutosize from "react-textarea-autosize";
-import { useMentionPosition } from "@/lib/use-mention-position";
+import { useMentionPosition } from "../lib/use-mention-position";
 
 export interface MentionItem {
 	id: string;
@@ -154,11 +154,10 @@ export function MentionsTextarea({
 					e.stopPropagation();
 					handleMentionSelect(item);
 				}}
-				className={`flex items-center gap-2 cursor-pointer rounded-sm px-2 py-1.5 text-sm transition-colors ${
-					isSelected
-						? "bg-blue-100 text-blue-900"
-						: "hover:bg-gray-100"
-				}`}
+				className={`flex items-center gap-2 cursor-pointer rounded-sm px-2 py-1.5 text-sm transition-colors ${isSelected
+					? "bg-blue-100 text-blue-900"
+					: "hover:bg-gray-100"
+					}`}
 				data-selected={isSelected}
 			>
 				{renderMentionItem ? (
@@ -227,9 +226,8 @@ export function MentionsTextarea({
 			<div className="relative">
 				<TextareaAutosize
 					ref={textareaRef}
-					className={`min-h-16 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2.5 text-base transition-colors outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 md:text-sm ${
-						disabled ? "cursor-not-allowed opacity-50" : ""
-					} ${className}`}
+					className={`min-h-16 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2.5 text-base transition-colors outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 md:text-sm ${disabled ? "cursor-not-allowed opacity-50" : ""
+						} ${className}`}
 					placeholder={placeholder}
 					value={value}
 					onChange={handleTextChange}
