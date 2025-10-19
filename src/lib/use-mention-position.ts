@@ -1,28 +1,38 @@
 // useMentionPosition.ts
 import * as React from "react";
 
-function findAtIndexForCurrentWord(text: string, caret: number) {
+function findAtIndexForCurrentWord(text: string, caret: number, triggers: string[] = ["@"]) {
 	// Look backwards from caret to the word start
 	let start = caret - 1;
 	while (start >= 0 && !/\s/.test(text[start])) start--;
 	start++; // move to first char of the word
 
-	const atPos = text.lastIndexOf("@", caret - 1);
-	if (atPos >= start) {
-		// ensure it's the same token and not an email mid-word if you want
-		return atPos;
+	// Find the most recent trigger in the current word
+	let bestTrigger = null;
+	let bestPosition = -1;
+
+	for (const trigger of triggers) {
+		const triggerPos = text.lastIndexOf(trigger, caret - 1);
+		if (triggerPos >= start && triggerPos > bestPosition) {
+			// ensure it's the same token and not an email mid-word if you want
+			bestPosition = triggerPos;
+			bestTrigger = trigger;
+		}
 	}
-	return -1;
+
+	return { position: bestPosition, trigger: bestTrigger };
 }
 
 export function useMentionPosition(
-	textareaRef: React.RefObject<HTMLTextAreaElement>
+	textareaRef: React.RefObject<HTMLTextAreaElement>,
+	triggers: string[] = ["@"]
 ) {
 	const [popupPos, setPopupPos] = React.useState<{
 		top: number;
 		left: number;
 	} | null>(null);
 	const [query, setQuery] = React.useState("");
+	const [currentTrigger, setCurrentTrigger] = React.useState<string | null>(null);
 
 	const update = React.useCallback(() => {
 		const ta = textareaRef.current;
@@ -30,20 +40,22 @@ export function useMentionPosition(
 
 		const caret = ta.selectionStart ?? 0;
 		const value = ta.value;
-		const atIndex = findAtIndexForCurrentWord(value, caret);
+		const { position: atIndex, trigger } = findAtIndexForCurrentWord(value, caret, triggers);
 
 		if (atIndex === -1) {
 			setPopupPos(null);
 			setQuery("");
+			setCurrentTrigger(null);
 			return;
 		}
 
-		// Optional: only open when there’s at least "@" (length >= 1)
+		// Optional: only open when there's at least the trigger (length >= 1)
 		const currentWord = value.slice(atIndex + 1, caret);
-		// If you want to close when space/newline typed after "@"
+		// If you want to close when space/newline typed after trigger
 		if (/\s/.test(currentWord)) {
 			setPopupPos(null);
 			setQuery("");
+			setCurrentTrigger(null);
 			return;
 		}
 
@@ -51,18 +63,20 @@ export function useMentionPosition(
 		if (!rect) {
 			setPopupPos(null);
 			setQuery("");
+			setCurrentTrigger(null);
 			return;
 		}
 
-		// Position *below* the '@'
+		// Position *below* the trigger
 		setPopupPos({
 			top: rect.bottom + 4 + window.scrollY,
 			left: rect.left + window.scrollX,
 		});
 		setQuery(currentWord);
-	}, [textareaRef]);
+		setCurrentTrigger(trigger);
+	}, [textareaRef, triggers]);
 
-	return { popupPos, query, update, clear: () => setPopupPos(null) };
+	return { popupPos, query, currentTrigger, update, clear: () => setPopupPos(null) };
 }
 
 export function getCaretClientRectForIndex(
