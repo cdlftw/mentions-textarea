@@ -334,7 +334,7 @@ function CommentForm() {
 
 ## Dependencies
 
--   React 18.0+ (hooks required)
+-   React 18.0+ (hooks required). Ensure your app's React version matches the package build to avoid JSX runtime mismatches.
 -   react-textarea-autosize (peer dependency)
 
 ## License

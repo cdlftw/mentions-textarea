@@ -19,11 +19,19 @@ export default defineConfig({
 				format === "es" ? "index.es.js" : "index.cjs",
 		},
 		rollupOptions: {
-			external: ["react", "react-dom", "react-textarea-autosize"],
+			external: [
+				"react",
+				"react-dom",
+				"react/jsx-runtime",
+				"react/jsx-dev-runtime",
+				"react-textarea-autosize",
+			],
 			output: {
 				globals: {
 					react: "React",
 					"react-dom": "ReactDOM",
+					"react/jsx-runtime": "jsxRuntime",
+					"react/jsx-dev-runtime": "jsxDevRuntime",
 					"react-textarea-autosize": "TextareaAutosize",
 				},
 			},
