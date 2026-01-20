@@ -122,6 +122,15 @@ export function getCaretClientRectForIndex(
 		"whiteSpace",
 	] as const;
 
+	const toCssProp = (prop: (typeof propertiesToCopy)[number]) => {
+		if (prop.startsWith("Moz")) {
+			return `-moz-${prop.slice(3)}`.replace(/[A-Z]/g, (m) =>
+				`-${m.toLowerCase()}`
+			);
+		}
+		return prop.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
+	};
+
 	div.style.position = "absolute";
 	div.style.visibility = "hidden";
 	div.style.whiteSpace = "pre-wrap"; // important: match wrapping
@@ -130,7 +139,11 @@ export function getCaretClientRectForIndex(
 
 	// Copy computed styles
 	propertiesToCopy.forEach((prop) => {
-		div.style[prop] = style[prop];
+		const cssProp = toCssProp(prop);
+		const value = style.getPropertyValue(cssProp);
+		if (value) {
+			div.style.setProperty(cssProp, value);
+		}
 	});
 
 	// The mirror must have the same width as the *inner* content box
