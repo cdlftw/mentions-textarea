@@ -116,7 +116,6 @@ export function getCaretClientRectForIndex(
 
 	// Copy computed styles
 	propertiesToCopy.forEach((prop) => {
-		// @ts-expect-error - index signature for CSSStyleDeclaration
 		div.style[prop] = style[prop];
 	});
 

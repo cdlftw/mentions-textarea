@@ -1,11 +1,25 @@
 {
 	"name": "mentions-textarea",
-	"private": true,
+	"private": false,
 	"version": "1.0.0",
 	"type": "module",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.es.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.es.js",
+			"require": "./dist/index.cjs"
+		}
+	},
+	"files": [
+		"dist",
+		"README.md"
+	],
 	"scripts": {
 		"dev": "vite",
-		"build": "tsc -b && vite build",
+		"build": "tsc -p tsconfig.lib.json && vite build",
 		"lint": "eslint .",
 		"preview": "vite preview"
 	},

@@ -55,7 +55,7 @@ function App() {
 						placeholder="Type @ to mention a person..."
 						mentionItems={peopleMentions}
 						onMentionSelect={handleMentionSelect}
-						renderMentionItem={customRenderMentionItem}
+						// renderMentionItem={customRenderMentionItem}
 						showSubmitButton={true}
 						submitButtonText="Post Comment"
 						onSubmit={() => {
