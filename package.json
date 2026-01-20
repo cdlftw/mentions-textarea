@@ -1,6 +1,6 @@
 {
 	"name": "mentions-textarea",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "A React textarea component with @mention functionality and autosize",
 	"type": "module",
 	"main": "./dist/index.cjs",
