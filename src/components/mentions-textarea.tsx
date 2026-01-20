@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, memo } from "react";
 import TextareaAutosize from "react-textarea-autosize";
-import { useMentionPosition } from "@/lib/use-mention-position";
+import { useMentionPosition } from "../lib/use-mention-position";
 
 export interface MentionItem {
 	id: string;
@@ -27,6 +27,8 @@ interface MentionsTextareaProps {
 		item: MentionItem,
 		isSelected: boolean
 	) => React.ReactNode;
+	triggers?: string[];
+	getMentionItems?: (trigger: string | null, query: string) => MentionItem[];
 }
 
 export function MentionsTextarea({
@@ -43,20 +45,35 @@ export function MentionsTextarea({
 	mentionItems = [],
 	onMentionSelect,
 	renderMentionItem,
+	triggers = ["@"],
+	getMentionItems,
 }: MentionsTextareaProps) {
 	const [selectedIndex, setSelectedIndex] = useState(0);
 	const [isNavigating, setIsNavigating] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
-	const { popupPos, query, update, clear } = useMentionPosition(
-		textareaRef as React.RefObject<HTMLTextAreaElement>
+	const popupRef = useRef<HTMLDivElement>(null);
+
+	// Memoize triggers to prevent unnecessary re-renders
+	const memoizedTriggers = useMemo(() => triggers, [triggers]);
+
+	const { popupPos, query, update, clear, currentTrigger } = useMentionPosition(
+		textareaRef as React.RefObject<HTMLTextAreaElement>,
+		memoizedTriggers
 	);
 
-	// Filter items based on query
-	const filteredItems = mentionItems.filter(
-		(item) =>
-			item.label.toLowerCase().includes(query.toLowerCase()) ||
-			item.value.toLowerCase().includes(query.toLowerCase())
-	);
+	// Get items based on trigger and query
+	const itemsToFilter = getMentionItems
+		? getMentionItems(currentTrigger, query)
+		: mentionItems;
+
+	// Filter items based on query - memoized for performance
+	const filteredItems = useMemo(() => {
+		return itemsToFilter.filter(
+			(item) =>
+				item.label.toLowerCase().includes(query.toLowerCase()) ||
+				item.value.toLowerCase().includes(query.toLowerCase())
+		);
+	}, [itemsToFilter, query]);
 
 	// Reset selection when popup opens
 	useEffect(() => {
@@ -71,6 +88,21 @@ export function MentionsTextarea({
 			setSelectedIndex(0);
 		}
 	}, [filteredItems.length, selectedIndex]);
+
+	// Scroll selected item into view
+	useEffect(() => {
+		if (popupPos && popupRef.current) {
+			const selectedElement = popupRef.current.querySelector(`[data-index="${selectedIndex}"]`);
+			if (selectedElement) {
+				setTimeout(() => {
+					selectedElement.scrollIntoView({
+						block: 'nearest',
+						behavior: 'instant'
+					});
+				}, 0);
+			}
+		}
+	}, [selectedIndex, popupPos]);
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (popupPos && filteredItems.length > 0) {
@@ -117,18 +149,20 @@ export function MentionsTextarea({
 	};
 
 	const handleMentionSelect = (item: MentionItem) => {
-		const lastAtIndex = value.lastIndexOf("@");
-		if (lastAtIndex !== -1) {
-			const beforeAt = value.substring(0, lastAtIndex);
-			const afterAt = value.substring(lastAtIndex + query.length + 1);
-			const newText = `${beforeAt}@${item.value} ${afterAt}`;
+		if (!currentTrigger) return;
+
+		const lastTriggerIndex = value.lastIndexOf(currentTrigger);
+		if (lastTriggerIndex !== -1) {
+			const beforeTrigger = value.substring(0, lastTriggerIndex);
+			const afterTrigger = value.substring(lastTriggerIndex + query.length + 1);
+			const newText = `${beforeTrigger}${currentTrigger}${item.value} ${afterTrigger}`;
 			onChange(newText);
 
 			// Position cursor after the mention
 			setTimeout(() => {
 				if (textareaRef.current) {
 					const newCursorPosition =
-						beforeAt.length + item.value.length + 2;
+						beforeTrigger.length + item.value.length + 2;
 					textareaRef.current.setSelectionRange(
 						newCursorPosition,
 						newCursorPosition
@@ -143,7 +177,8 @@ export function MentionsTextarea({
 		onMentionSelect?.(item);
 	};
 
-	const renderMentionItemContent = (item: MentionItem, index: number) => {
+	// Memoized mention item component for performance
+	const MentionItemComponent = memo(({ item, index }: { item: MentionItem; index: number }) => {
 		const isSelected = index === selectedIndex;
 
 		return (
@@ -154,12 +189,19 @@ export function MentionsTextarea({
 					e.stopPropagation();
 					handleMentionSelect(item);
 				}}
-				className={`flex items-center gap-2 cursor-pointer rounded-sm px-2 py-1.5 text-sm transition-colors ${
-					isSelected
-						? "bg-blue-100 text-blue-900"
-						: "hover:bg-gray-100"
-				}`}
+				className={`flex items-center gap-2 cursor-pointer rounded-sm px-2 py-1.5 text-sm select-none ${isSelected
+					? "bg-blue-100 text-blue-900"
+					: "hover:bg-gray-100"
+					}`}
 				data-selected={isSelected}
+				data-index={index}
+				onMouseDown={(e) => e.preventDefault()}
+				style={{
+					userSelect: 'none',
+					WebkitUserSelect: 'none',
+					MozUserSelect: 'none',
+					msUserSelect: 'none'
+				}}
 			>
 				{renderMentionItem ? (
 					renderMentionItem(item, isSelected)
@@ -175,19 +217,24 @@ export function MentionsTextarea({
 				)}
 			</div>
 		);
-	};
+	});
 
-	const renderMentionPopup = () => {
+
+	const renderMentionPopup = useMemo(() => {
 		if (!popupPos) return null;
 
 		return (
 			<div
+				ref={popupRef}
 				style={{
 					position: "fixed",
 					top: popupPos.top,
 					left: popupPos.left,
+					willChange: 'transform',
+					contain: 'layout style paint'
 				}}
-				className="z-50 w-80 rounded-md border border-gray-200 bg-white p-0 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200"
+				className="z-50 w-80 rounded-md border border-gray-200 bg-white p-0 shadow-lg select-none"
+				onMouseDown={(e) => e.preventDefault()}
 			>
 				<div className="max-h-[300px] overflow-y-auto">
 					{filteredItems.length === 0 ? (
@@ -197,14 +244,16 @@ export function MentionsTextarea({
 					) : (
 						<div className="p-1">
 							{filteredItems
-								.slice(0, 10)
-								.map(renderMentionItemContent)}
+								.slice(0, 20)
+								.map((item, index) => (
+									<MentionItemComponent key={item.id} item={item} index={index} />
+								))}
 						</div>
 					)}
 				</div>
 			</div>
 		);
-	};
+	}, [popupPos, filteredItems, selectedIndex, renderMentionItem]);
 
 	const renderSubmitButton = () => {
 		if (!showSubmitButton) return null;
@@ -227,9 +276,8 @@ export function MentionsTextarea({
 			<div className="relative">
 				<TextareaAutosize
 					ref={textareaRef}
-					className={`min-h-16 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2.5 text-base transition-colors outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 md:text-sm ${
-						disabled ? "cursor-not-allowed opacity-50" : ""
-					} ${className}`}
+					className={`min-h-16 w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2.5 text-base transition-colors outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 md:text-sm ${disabled ? "cursor-not-allowed opacity-50" : ""
+						} ${className}`}
 					placeholder={placeholder}
 					value={value}
 					onChange={handleTextChange}
@@ -246,7 +294,7 @@ export function MentionsTextarea({
 					minRows={3}
 					maxRows={10}
 				/>
-				{renderMentionPopup()}
+				{renderMentionPopup}
 			</div>
 			{renderSubmitButton()}
 		</div>

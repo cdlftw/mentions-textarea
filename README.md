@@ -16,25 +16,18 @@ I created this component because I couldn't find a mentions textarea that worked
 
 ## Installation
 
-### Option 1: Copy the component file
-
 ```bash
-# Copy the component to your project
-cp mentions-textarea.tsx src/components/
-```
-
-### Option 2: Install dependencies
-
-```bash
-npm install react-textarea-autosize
+npm install mentions-textarea
 # or
-yarn add react-textarea-autosize
+yarn add mentions-textarea
+# or
+pnpm add mentions-textarea
 ```
 
 ## Basic Usage
 
 ```tsx
-import { MentionsTextarea, MentionItem } from "./components/mentions-textarea";
+import { MentionsTextarea, MentionItem } from "mentions-textarea";
 
 const users: MentionItem[] = [
 	{ id: "1", label: "John Doe", value: "john.doe" },
@@ -341,8 +334,8 @@ function CommentForm() {
 
 ## Dependencies
 
--   React 16.8+ (hooks required)
--   react-textarea-autosize (for the demo only)
+-   React 18.0+ (hooks required)
+-   react-textarea-autosize (peer dependency)
 
 ## License
 

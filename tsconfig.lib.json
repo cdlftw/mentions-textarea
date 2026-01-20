@@ -1,21 +1,20 @@
 {
+	"extends": "./tsconfig.app.json",
 	"compilerOptions": {
-		"target": "ES2022",
-		"lib": ["ES2022", "DOM", "DOM.Iterable"],
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-		"jsx": "react-jsx",
 		"declaration": true,
-		"emitDeclarationOnly": true,
-		"declarationMap": false,
-		"outDir": "dist",
-		"rootDir": "src",
-		"stripInternal": true,
-		"skipLibCheck": true,
-		"baseUrl": ".",
-		"paths": {
-			"@/*": ["./src/*"]
-		}
+		"declarationMap": true,
+		"emitDeclarationOnly": false,
+		"noEmit": false,
+		"outDir": "./dist",
+		"rootDir": "./src",
+		"allowImportingTsExtensions": false,
+		"verbatimModuleSyntax": false
 	},
-	"include": ["src/index.ts", "src/components/**/*.ts", "src/components/**/*.tsx", "src/lib/**/*.ts"]
+	"include": ["src/**/*"],
+	"exclude": [
+		"src/**/*.test.*",
+		"src/**/*.spec.*",
+		"src/main.tsx",
+		"src/App.tsx"
+	]
 }
